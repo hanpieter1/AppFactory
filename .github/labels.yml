@@ -1,0 +1,84 @@
+# GitHub Labels Configuration for Typhoon
+# Apply with: gh label create "name" --description "desc" --color "color"
+# Or use: ./scripts/setup-labels.sh
+
+# Issue Types
+- name: bug
+  description: Something isn't working
+  color: d73a4a
+
+- name: enhancement
+  description: New feature or request
+  color: a2eeef
+
+- name: documentation
+  description: Improvements or additions to documentation
+  color: 0075ca
+
+# Priority Labels
+- name: high-priority
+  description: Critical for production
+  color: b60205
+
+- name: medium-priority
+  description: Important but not blocking
+  color: fbca04
+
+- name: low-priority
+  description: Nice to have
+  color: 0e8a16
+
+# Area Labels
+- name: security
+  description: Security hardening and vulnerability fixes
+  color: 5319e7
+
+- name: reliability
+  description: Reliability and monitoring improvements
+  color: 1d76db
+
+- name: scalability
+  description: Scalability and performance improvements
+  color: 006b75
+
+- name: cost-optimization
+  description: Cost optimization and efficiency
+  color: 0e8a16
+
+- name: compliance
+  description: Compliance and governance
+  color: c5def5
+
+- name: testing
+  description: Testing and quality improvements
+  color: bfd4f2
+
+- name: infrastructure
+  description: Infrastructure changes
+  color: d4c5f9
+
+# Workflow Labels
+- name: triage
+  description: Needs triage
+  color: ededed
+
+- name: in-progress
+  description: Currently being worked on
+  color: 0052cc
+
+- name: blocked
+  description: Blocked by external dependency
+  color: b60205
+
+- name: ready-for-review
+  description: Ready for code review
+  color: 0e8a16
+
+# Sprint Labels (optional - for sprint-based workflow)
+- name: sprint-current
+  description: In current sprint
+  color: 5319e7
+
+- name: sprint-next
+  description: Planned for next sprint
+  color: c2e0c6

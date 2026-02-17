@@ -1,0 +1,55 @@
+# Auto-shutdown App Runner to save costs
+# Pauses the service every 2 hours
+
+name: Auto Shutdown
+
+on:
+  schedule:
+    # Run every 2 hours
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  AWS_REGION: eu-central-1
+
+jobs:
+  shutdown:
+    name: Pause App Runner
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Check service status
+        id: check-status
+        run: |
+          STATUS=$(aws apprunner describe-service \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Service.Status' \
+            --output text)
+
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          echo "Current service status: $STATUS"
+
+      - name: Pause App Runner service
+        if: steps.check-status.outputs.status == 'RUNNING'
+        run: |
+          echo "Pausing App Runner service to save costs..."
+          aws apprunner pause-service \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }}
+
+          echo "✅ Service paused successfully"
+          echo "To resume: run 'make infra-start' or resume from AWS Console"
+
+      - name: Skip if not running
+        if: steps.check-status.outputs.status != 'RUNNING'
+        run: |
+          echo "Service is not running (status: ${{ steps.check-status.outputs.status }})"
+          echo "No action needed"

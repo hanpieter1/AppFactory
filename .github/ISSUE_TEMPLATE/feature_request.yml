@@ -1,0 +1,100 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please fill out the sections below.
+
+  - type: input
+    id: backlog-ref
+    attributes:
+      label: Backlog Reference
+      description: If this implements a backlog item, reference it here (e.g., REQ-018, SEC-001)
+      placeholder: "REQ-XXX or N/A"
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Summary
+      description: A brief description of the feature.
+      placeholder: Describe the feature in 1-2 sentences...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: Describe the problem or need...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should this feature work?
+      placeholder: Describe your proposed solution...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions you've considered?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - High - Critical for production
+        - Medium - Important but not blocking
+        - Low - Nice to have
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which area does this feature affect?
+      options:
+        - Security
+        - Reliability & Monitoring
+        - Scalability & Performance
+        - Cost Optimization
+        - Compliance & Governance
+        - Testing & Quality
+        - Infrastructure
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Tests
+      description: Testable criteria to verify the feature is complete. Each test should be verifiable.
+      placeholder: |
+        - [ ] T1: [Specific testable condition]
+        - [ ] T2: [Specific testable condition]
+        - [ ] T3: [Specific testable condition]
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have checked BACKLOG.md for related items
+          required: true
+        - label: I have searched existing issues to ensure this hasn't been requested
+          required: true

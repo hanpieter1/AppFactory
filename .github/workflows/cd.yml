@@ -1,0 +1,229 @@
+# CD Pipeline - Deploy to AWS App Runner
+# REQ-010: Continuous Deployment
+
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REPOSITORY: appfactory-app
+
+jobs:
+  deploy:
+    name: Deploy to AWS App Runner
+    runs-on: ubuntu-latest
+
+    # Required secrets:
+    # - AWS_ROLE_ARN (for OIDC) or AWS_ACCESS_KEY_ID + AWS_SECRET_ACCESS_KEY
+    # - ECR_REPOSITORY (full URI)
+    # - APP_RUNNER_SERVICE_ARN
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build and push Docker image
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Resume service if paused
+        id: resume-service
+        run: |
+          echo "Checking service status..."
+          STATUS=$(aws apprunner describe-service \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Service.Status' \
+            --output text)
+
+          echo "Current status: $STATUS"
+
+          if [[ "$STATUS" == "PAUSED" ]]; then
+            echo "🔄 Service is paused, resuming..."
+            aws apprunner resume-service \
+              --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+              --region ${{ env.AWS_REGION }}
+            echo "resumed=true" >> $GITHUB_OUTPUT
+            echo "✅ Resume command sent"
+          else
+            echo "resumed=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Service is not paused (status: $STATUS)"
+          fi
+
+      - name: Wait for service to be ready
+        run: |
+          echo "Waiting for service to be in RUNNING state..."
+          for i in {1..60}; do
+            STATUS=$(aws apprunner describe-service \
+              --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+              --region ${{ env.AWS_REGION }} \
+              --query 'Service.Status' \
+              --output text)
+
+            echo "Attempt $i/60: Service status = $STATUS"
+
+            if [[ "$STATUS" == "RUNNING" ]]; then
+              echo "✅ Service is ready for deployment"
+              break
+            fi
+
+            if [[ "$STATUS" == "OPERATION_IN_PROGRESS" ]]; then
+              echo "⏳ Operation in progress, waiting..."
+            fi
+
+            if [[ $i -eq 60 ]]; then
+              echo "❌ Timeout waiting for service to be ready"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+      - name: Deploy to App Runner
+        id: deploy-app-runner
+        env:
+          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+        run: |
+          # Trigger App Runner deployment
+          aws apprunner start-deployment \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }}
+
+          echo "Deployment triggered for service: ${{ secrets.APP_RUNNER_SERVICE_ARN }}"
+
+      - name: Wait for deployment
+        run: |
+          echo "Waiting for deployment to complete..."
+          sleep 30
+
+          # Check deployment status
+          STATUS=$(aws apprunner describe-service \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Service.Status' \
+            --output text)
+
+          echo "Service status: $STATUS"
+
+          if [[ "$STATUS" != "RUNNING" ]]; then
+            echo "⚠️  Service not running yet, current status: $STATUS"
+          fi
+
+      - name: Get App Runner URL
+        id: get-url
+        run: |
+          SERVICE_URL=$(aws apprunner describe-service \
+            --service-arn ${{ secrets.APP_RUNNER_SERVICE_ARN }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Service.ServiceUrl' \
+            --output text)
+
+          echo "url=https://$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "App Runner URL: https://$SERVICE_URL"
+
+      - name: Smoke test - Health endpoint
+        run: |
+          URL="${{ steps.get-url.outputs.url }}/health"
+          echo "Testing health endpoint: $URL"
+
+          # Retry up to 5 times with 10 second delays
+          for i in {1..5}; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+
+            if [[ "$RESPONSE" == "200" ]]; then
+              echo "✅ Health check passed (HTTP $RESPONSE)"
+              exit 0
+            fi
+
+            echo "Attempt $i/5: Health check returned HTTP $RESPONSE, retrying..."
+            sleep 10
+          done
+
+          echo "❌ Health check failed after 5 attempts"
+          exit 1
+
+      - name: Smoke test - Status endpoint
+        run: |
+          URL="${{ steps.get-url.outputs.url }}/api/status"
+          echo "Testing status endpoint: $URL"
+
+          RESPONSE=$(curl -s "$URL")
+          echo "Response: $RESPONSE"
+
+          # Check if response contains expected fields
+          if echo "$RESPONSE" | jq -e '.application.name == "AppFactory"' > /dev/null; then
+            echo "✅ Status endpoint working correctly"
+          else
+            echo "❌ Status endpoint response invalid"
+            exit 1
+          fi
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: ${{ steps.build-image.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **App URL**: ${{ steps.get-url.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Health Check](${{ steps.get-url.outputs.url }}/health)" >> $GITHUB_STEP_SUMMARY
+          echo "- [Status API](${{ steps.get-url.outputs.url }}/api/status)" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs above for details"
+          # In v2, add Slack/email notification here

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Backlog
+    url: https://github.com/hduy/Typhoon/blob/main/BACKLOG.md
+    about: View the product backlog for planned features
+  - name: Documentation
+    url: https://github.com/hduy/Typhoon/blob/main/docs/requirements.md
+    about: View the requirements documentation
