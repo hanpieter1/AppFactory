@@ -1069,6 +1069,21 @@
         color: var(--text-muted);
         font-size: 0.95rem;
       }
+
+      /* ── Clients View ── */
+      #clients-view {
+        display: none;
+      }
+      #clients-view.active {
+        display: block;
+      }
+      .filters {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        flex-wrap: wrap;
+      }
     </style>
   </head>
   <body>
@@ -1362,6 +1377,58 @@
 
         </div><!-- /users-view -->
 
+        <!-- Clients View -->
+        <div id="clients-view">
+          <div class="page-header">
+            <h1>Klanten</h1>
+            <button class="btn btn-primary btn-sm" id="create-client-btn" style="width: auto">
+              Nieuwe klant
+            </button>
+          </div>
+          <div class="filters">
+            <input
+              type="text"
+              id="clients-search"
+              placeholder="Zoek op naam of code..."
+              class="search-input"
+              style="flex: none; width: 300px"
+            />
+            <label style="font-size: 0.9rem; color: var(--text-muted)">
+              <input type="checkbox" id="clients-show-inactive" style="margin-right: 0.5rem" />
+              Toon inactieve klanten
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="cursor: pointer" data-sort="code">
+                    Code <span class="sort-arrow" id="sort-code-indicator"></span>
+                  </th>
+                  <th style="cursor: pointer" data-sort="name">
+                    Naam <span class="sort-arrow" id="sort-name-indicator"></span>
+                  </th>
+                  <th>Aantal projecten</th>
+                  <th>Status</th>
+                  <th>Acties</th>
+                </tr>
+              </thead>
+              <tbody id="clients-table-body">
+                <tr>
+                  <td colspan="5" class="loading">Laden...</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="pagination" id="clients-pagination" style="display: none">
+              <span id="clients-page-info">Pagina 1 van 1</span>
+              <div class="pagination-controls">
+                <button class="page-btn" id="clients-prev-page" disabled>Vorige</button>
+                <button class="page-btn" id="clients-next-page" disabled>Volgende</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         </div><!-- /main-content -->
       </main>
     </div>
@@ -1403,6 +1470,53 @@
       </div>
     </div>
 
+    <!-- Client Modal -->
+    <div class="modal-backdrop hidden" id="client-modal">
+      <div class="modal">
+        <h3 id="client-modal-title">Nieuwe klant</h3>
+        <div id="client-modal-error" class="error-msg"></div>
+        <div class="form-group">
+          <label for="client-code">Code *</label>
+          <input
+            type="text"
+            id="client-code"
+            maxlength="20"
+            placeholder="Bijv. ACME"
+          />
+          <div class="form-hint">Unieke code, max 20 karakters</div>
+        </div>
+        <div class="form-group">
+          <label for="client-name">Naam *</label>
+          <input
+            type="text"
+            id="client-name"
+            maxlength="100"
+            placeholder="Bijv. ACME Corporation"
+          />
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer">
+            <input type="checkbox" id="client-active" checked />
+            Actief
+          </label>
+        </div>
+        <div class="modal-actions" style="justify-content: space-between">
+          <button
+            class="btn btn-danger btn-sm"
+            id="client-delete-btn"
+            style="display: none; width: auto"
+          >
+            Verwijderen
+          </button>
+          <span style="flex: 1"></span>
+          <button class="btn btn-secondary btn-sm" id="client-modal-cancel">Annuleren</button>
+          <button class="btn btn-primary btn-sm" id="client-modal-save" style="width: auto">
+            Opslaan
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast notification -->
     <div class="toast" id="toast"></div>
 
@@ -1420,6 +1534,18 @@
         let searchDebounce = null;
         let selectedUserId = null;
         let allRoles = [];
+
+        // Client state
+        let clients = [];
+        let editingClientId = null;
+        let showInactiveClients = false;
+        let clientsSearchTerm = '';
+        let clientsSearchDebounce = null;
+        let clientsSortField = 'code';
+        let clientsSortOrder = 'asc';
+        let clientsPage = 1;
+        let clientsPerPage = 20;
+        let allClientsData = [];
 
         // ── DOM refs ──
         const loginView = document.getElementById('login-view');
@@ -1639,6 +1765,15 @@
             items.push({ label: 'Users', icon: 'U', view: 'users', active: true });
           }
 
+          // Klanten for admin/manager
+          const isManager =
+            currentUser &&
+            currentUser.roles &&
+            currentUser.roles.some((r) => r.name === 'Manager');
+          if (isAdmin || isManager) {
+            items.push({ label: 'Klanten', icon: 'K', view: 'clients', active: false });
+          }
+
           items.forEach((item) => {
             const el = document.createElement('div');
             el.className = 'nav-item' + (item.active ? ' active' : '');
@@ -1653,6 +1788,8 @@
                   showDashboardView();
                 } else if (item.view === 'users') {
                   showUsersView();
+                } else if (item.view === 'clients') {
+                  showClientsView();
                 }
               });
             }
@@ -1663,7 +1800,7 @@
         // ── View Management ──
         function hideAllViews() {
           document.getElementById('list-view').classList.add('hidden');
-          ['detail-view', 'create-view', 'dashboard-view'].forEach(function (id) {
+          ['detail-view', 'create-view', 'dashboard-view', 'clients-view'].forEach(function (id) {
             var el = document.getElementById(id);
             if (el) el.classList.remove('active');
           });
@@ -1681,6 +1818,13 @@
           document.getElementById('list-view').classList.remove('hidden');
           loadRoles();
           loadUsers();
+        }
+
+        // ── Clients View ──
+        function showClientsView() {
+          hideAllViews();
+          document.getElementById('clients-view').classList.add('active');
+          loadClients();
         }
 
         function showListView() {
@@ -2238,6 +2382,264 @@
           } finally {
             btn.disabled = false;
             btn.textContent = 'Create User';
+          }
+        });
+
+        // ── Clients CRUD ──
+        async function loadClients() {
+          const tbody = document.getElementById('clients-table-body');
+          tbody.innerHTML = '<tr><td colspan="5" class="loading">Laden...</td></tr>';
+
+          try {
+            // Build query params
+            const params = [];
+            if (!showInactiveClients) params.push('active=true');
+            if (clientsSearchTerm) params.push('search=' + encodeURIComponent(clientsSearchTerm));
+            const query = params.length > 0 ? '?' + params.join('&') : '';
+
+            // Fetch clients and projects
+            const [clientsRes, projectsRes] = await Promise.all([
+              apiFetch('/api/clients' + query),
+              apiFetch('/api/projects'),
+            ]);
+
+            if (!clientsRes.ok) throw new Error('Failed to load clients');
+            allClientsData = await clientsRes.json();
+
+            // Count projects per client
+            const projectCounts = {};
+            if (projectsRes.ok) {
+              const allProjects = await projectsRes.json();
+              allProjects.forEach((p) => {
+                if (p.clientId) {
+                  projectCounts[p.clientId] = (projectCounts[p.clientId] || 0) + 1;
+                }
+              });
+            }
+
+            // Sort clients
+            allClientsData.sort((a, b) => {
+              let aVal = a[clientsSortField];
+              let bVal = b[clientsSortField];
+              if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+              if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+              if (clientsSortOrder === 'asc') {
+                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+              } else {
+                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+              }
+            });
+
+            // Pagination
+            const totalPages = Math.ceil(allClientsData.length / clientsPerPage);
+            const start = (clientsPage - 1) * clientsPerPage;
+            const end = start + clientsPerPage;
+            clients = allClientsData.slice(start, end);
+
+            // Update sort indicators
+            document.getElementById('sort-code-indicator').textContent =
+              clientsSortField === 'code' ? (clientsSortOrder === 'asc' ? '\u25B2' : '\u25BC') : '';
+            document.getElementById('sort-name-indicator').textContent =
+              clientsSortField === 'name' ? (clientsSortOrder === 'asc' ? '\u25B2' : '\u25BC') : '';
+
+            // Update pagination controls
+            const paginationDiv = document.getElementById('clients-pagination');
+            if (totalPages > 1) {
+              paginationDiv.style.display = 'flex';
+              document.getElementById('clients-page-info').textContent =
+                'Pagina ' + clientsPage + ' van ' + totalPages;
+              document.getElementById('clients-prev-page').disabled = clientsPage === 1;
+              document.getElementById('clients-next-page').disabled = clientsPage === totalPages;
+            } else {
+              paginationDiv.style.display = 'none';
+            }
+
+            // Render table
+            if (clients.length === 0) {
+              tbody.innerHTML =
+                '<tr><td colspan="5" class="empty-state">Geen klanten gevonden</td></tr>';
+              return;
+            }
+
+            tbody.innerHTML = '';
+            clients.forEach((client) => {
+              const tr = document.createElement('tr');
+              const projectCount = projectCounts[client.id] || 0;
+              tr.innerHTML = `
+          <td>${esc(client.code)}</td>
+          <td>${esc(client.name)}</td>
+          <td>${projectCount}</td>
+          <td><span class="badge ${client.active ? 'badge-active' : 'badge-inactive'}">${client.active ? 'Actief' : 'Inactief'}</span></td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="editClient('${client.id}')">Bewerken</button>
+            <button class="btn btn-sm ${client.active ? 'btn-danger' : 'btn-success'}" onclick="toggleClientActive('${client.id}', ${!client.active})">${client.active ? 'Deactiveren' : 'Activeren'}</button>
+          </td>
+        `;
+              tbody.appendChild(tr);
+            });
+          } catch (err) {
+            tbody.innerHTML =
+              '<tr><td colspan="5" class="empty-state">Fout bij laden: ' +
+              esc(err.message) +
+              '</td></tr>';
+          }
+        }
+
+        window.editClient = async function (clientId) {
+          const client = clients.find((c) => c.id === clientId);
+          if (!client) return;
+
+          editingClientId = clientId;
+          document.getElementById('client-modal-title').textContent = 'Klant bewerken';
+          document.getElementById('client-code').value = client.code;
+          document.getElementById('client-code').disabled = true;
+          document.getElementById('client-name').value = client.name;
+          document.getElementById('client-active').checked = client.active;
+          document.getElementById('client-delete-btn').style.display = 'inline-block';
+          document.getElementById('client-modal-error').style.display = 'none';
+          document.getElementById('client-modal-error').classList.remove('visible');
+          document.getElementById('client-modal').classList.remove('hidden');
+        };
+
+        window.toggleClientActive = async function (clientId, activate) {
+          try {
+            const res = await apiFetch(
+              '/api/clients/' + clientId + '/' + (activate ? 'activate' : 'deactivate'),
+              { method: 'PATCH' }
+            );
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error?.message || data.message || 'Actie mislukt');
+            }
+            showToast('Klant ' + (activate ? 'geactiveerd' : 'gedeactiveerd'));
+            loadClients();
+          } catch (err) {
+            showToast(err.message, 'error');
+          }
+        };
+
+        document.getElementById('create-client-btn').addEventListener('click', () => {
+          editingClientId = null;
+          document.getElementById('client-modal-title').textContent = 'Nieuwe klant';
+          document.getElementById('client-code').value = '';
+          document.getElementById('client-code').disabled = false;
+          document.getElementById('client-name').value = '';
+          document.getElementById('client-active').checked = true;
+          document.getElementById('client-delete-btn').style.display = 'none';
+          document.getElementById('client-modal-error').style.display = 'none';
+          document.getElementById('client-modal-error').classList.remove('visible');
+          document.getElementById('client-modal').classList.remove('hidden');
+        });
+
+        document.getElementById('client-modal-cancel').addEventListener('click', () => {
+          document.getElementById('client-modal').classList.add('hidden');
+        });
+
+        document.getElementById('client-modal-save').addEventListener('click', async () => {
+          const code = document.getElementById('client-code').value.trim();
+          const name = document.getElementById('client-name').value.trim();
+          const active = document.getElementById('client-active').checked;
+          const errorEl = document.getElementById('client-modal-error');
+
+          if (!code || !name) {
+            errorEl.textContent = 'Code en naam zijn verplicht';
+            errorEl.style.display = 'block';
+            errorEl.classList.add('visible');
+            return;
+          }
+
+          try {
+            let res;
+            if (editingClientId) {
+              res = await apiFetch('/api/clients/' + editingClientId, {
+                method: 'PUT',
+                body: JSON.stringify({ name }),
+              });
+            } else {
+              res = await apiFetch('/api/clients', {
+                method: 'POST',
+                body: JSON.stringify({ code, name, active }),
+              });
+            }
+
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error?.message || data.message || 'Opslaan mislukt');
+            }
+
+            document.getElementById('client-modal').classList.add('hidden');
+            showToast(editingClientId ? 'Klant bijgewerkt' : 'Klant aangemaakt');
+            loadClients();
+          } catch (err) {
+            errorEl.textContent = err.message;
+            errorEl.style.display = 'block';
+            errorEl.classList.add('visible');
+          }
+        });
+
+        document.getElementById('client-delete-btn').addEventListener('click', async () => {
+          if (!confirm('Weet je zeker dat je deze klant wilt verwijderen?')) return;
+
+          try {
+            const res = await apiFetch('/api/clients/' + editingClientId, { method: 'DELETE' });
+            if (!res.ok && res.status !== 204) {
+              const data = await res.json();
+              throw new Error(data.error?.message || data.message || 'Verwijderen mislukt');
+            }
+            document.getElementById('client-modal').classList.add('hidden');
+            showToast('Klant verwijderd');
+            loadClients();
+          } catch (err) {
+            const errorEl = document.getElementById('client-modal-error');
+            errorEl.textContent = err.message;
+            errorEl.style.display = 'block';
+            errorEl.classList.add('visible');
+          }
+        });
+
+        document.getElementById('clients-show-inactive').addEventListener('change', (e) => {
+          showInactiveClients = e.target.checked;
+          clientsPage = 1;
+          loadClients();
+        });
+
+        // Client search with debouncing
+        document.getElementById('clients-search').addEventListener('input', (e) => {
+          if (clientsSearchDebounce) clearTimeout(clientsSearchDebounce);
+          clientsSearchDebounce = setTimeout(() => {
+            clientsSearchTerm = e.target.value.trim();
+            clientsPage = 1;
+            loadClients();
+          }, 300);
+        });
+
+        // Client sortable columns
+        document.querySelectorAll('#clients-view th[data-sort]').forEach((th) => {
+          th.addEventListener('click', () => {
+            const sortField = th.getAttribute('data-sort');
+            if (clientsSortField === sortField) {
+              clientsSortOrder = clientsSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+              clientsSortField = sortField;
+              clientsSortOrder = 'asc';
+            }
+            loadClients();
+          });
+        });
+
+        // Client pagination
+        document.getElementById('clients-prev-page').addEventListener('click', () => {
+          if (clientsPage > 1) {
+            clientsPage--;
+            loadClients();
+          }
+        });
+
+        document.getElementById('clients-next-page').addEventListener('click', () => {
+          const totalPages = Math.ceil(allClientsData.length / clientsPerPage);
+          if (clientsPage < totalPages) {
+            clientsPage++;
+            loadClients();
           }
         });
 

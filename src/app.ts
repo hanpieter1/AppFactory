@@ -12,6 +12,7 @@ import authRouter from './routes/api/auth';
 import modulesRouter from './routes/api/modules';
 import accessRulesRouter from './routes/api/access-rules';
 import navigationRouter from './routes/api/navigation';
+import clientsRouter from './routes/api/clients';
 
 export function createApp(): Application {
   const app = express();
@@ -36,6 +37,7 @@ export function createApp(): Application {
   app.use('/api/modules', modulesRouter);
   app.use('/api/access-rules', accessRulesRouter);
   app.use('/api/navigation', navigationRouter);
+  app.use('/api/clients', clientsRouter);
 
   // Root endpoint - Home page
   app.get('/', (_req, res) => {
