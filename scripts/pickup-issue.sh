@@ -13,9 +13,9 @@ set -e
 # Configuration
 OWNER="hanpieter1"
 REPO="AppFactory"
-PROJECT_NUMBER=0        # TODO: Update after project board creation
-STATUS_FIELD_ID=""      # TODO: Update after project board creation
-IN_PROGRESS_OPTION_ID="" # TODO: Update after project board creation
+PROJECT_NUMBER=4
+STATUS_FIELD_ID="PVTSSF_lAHOAa4VUM4BPfU8zg94ixw"
+IN_PROGRESS_OPTION_ID="89ca0d47"
 
 # Colors
 RED='\033[0;31m'
@@ -156,7 +156,7 @@ log_info "Updating project status to 'In Progress'..."
 ITEM_ID=$(get_project_item_id "$ISSUE_NUMBER")
 if [ -n "$ITEM_ID" ]; then
     gh project item-edit \
-        --project-id "" \  # TODO: Update after project board creation
+        --project-id "PVT_kwHOAa4VUM4BPfU8" \
         --id "$ITEM_ID" \
         --field-id "$STATUS_FIELD_ID" \
         --single-select-option-id "$IN_PROGRESS_OPTION_ID" 2>/dev/null || log_warning "Could not update project status"

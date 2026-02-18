@@ -35,10 +35,10 @@ param(
 # Configuration
 $OWNER = "hanpieter1"
 $REPO = "AppFactory"
-$PROJECT_NUMBER = 2
-$PROJECT_ID = ""           # TODO: Update after project board creation
-$STATUS_FIELD_ID = ""      # TODO: Update after project board creation
-$IN_PROGRESS_OPTION_ID = "47fc9ee4"
+$PROJECT_NUMBER = 4
+$PROJECT_ID = "PVT_kwHOAa4VUM4BPfU8"
+$STATUS_FIELD_ID = "PVTSSF_lAHOAa4VUM4BPfU8zg94ixw"
+$IN_PROGRESS_OPTION_ID = "89ca0d47"
 
 # Functions
 function Write-Info { param($Message) Write-Host "[INFO] $Message" -ForegroundColor Blue }
