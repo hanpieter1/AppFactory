@@ -133,8 +133,8 @@ PostgreSQL on RDS is the best choice because:
 {
   host: process.env.DB_HOST,
   port: 5432,
-  database: 'typhoon',
-  user: 'typhoon',
+  database: 'appfactory',
+  user: 'appfactory',
   password: process.env.DB_PASSWORD,
   max: 20, // connection pool size
   idleTimeoutMillis: 30000,

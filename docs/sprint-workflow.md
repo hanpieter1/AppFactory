@@ -1,10 +1,10 @@
 # Sprint Workflow
 
-This document describes the agile sprint workflow for the Typhoon project using GitHub Projects.
+This document describes the agile sprint workflow for the AppFactory project using GitHub Projects.
 
 ## Project Board
 
-**URL:** https://github.com/users/hanpieter1/projects/2
+**URL:** https://github.com/users/hanpieter1/projects/4
 
 ## Sprint Cadence
 
@@ -19,7 +19,7 @@ This document describes the agile sprint workflow for the Typhoon project using 
 | Column | Description |
 |--------|-------------|
 | **Backlog** | Prioritized items not yet scheduled |
-| **Sprint** | Items committed to current sprint |
+| **Todo** | Items committed to current sprint |
 | **In Progress** | Actively being worked on |
 | **Review** | Ready for review/testing |
 | **Done** | Completed and verified |
@@ -28,7 +28,7 @@ This document describes the agile sprint workflow for the Typhoon project using 
 
 | Field | Type | Values |
 |-------|------|--------|
-| **Status** | Single Select | Backlog, Sprint, In Progress, Review, Done |
+| **Status** | Single Select | Backlog, Todo, In Progress, Review, Done |
 | **Iteration** | Iteration | 2-week sprints |
 | **Story Points** | Number | 1, 2, 3, 5, 8, 13 (Fibonacci) |
 | **Priority** | Single Select | High, Medium, Low |
@@ -39,7 +39,7 @@ This document describes the agile sprint workflow for the Typhoon project using 
 ### Sprint Planning (Monday, Week 1)
 
 1. Review velocity from previous sprint
-2. Pull items from Backlog into Sprint column
+2. Pull items from Backlog into Todo column
 3. Assign story points to new items
 4. Commit to sprint goal
 
@@ -71,9 +71,11 @@ Track velocity using GitHub Projects Insights:
 
 | Label | Purpose |
 |-------|---------|
+| `Epic 1: User Management` | User management stories |
+| `Epic 2: Master Data` | Master data management stories |
+| `Epic 3: Project Portfolio` | Portfolio management stories |
+| ... | (18 epic labels total) |
 | `high-priority` | Must be done this sprint |
-| `medium-priority` | Should be done if capacity allows |
-| `low-priority` | Nice to have |
 | `blocked` | Waiting on external dependency |
 | `security` | Security-related work |
 | `infrastructure` | Infrastructure/DevOps work |
@@ -81,53 +83,59 @@ Track velocity using GitHub Projects Insights:
 
 ## GitHub Project Configuration
 
-### Required Fields Setup
+### Project Board IDs
 
-1. **Go to:** Project Settings → Fields
-2. **Add Iteration field:**
-   - Click "+" → "Iteration"
-   - Duration: 2 weeks
-   - Start date: Next Monday
-3. **Add Story Points field:**
-   - Click "+" → "Number"
-   - Name: "Story Points"
-4. **Add Priority field:**
-   - Click "+" → "Single select"
-   - Options: High, Medium, Low
-5. **Add Type field:**
-   - Click "+" → "Single select"
-   - Options: Feature, Bug, Tech Debt, Docs, Infrastructure
-
-### Board View Configuration
-
-1. **Go to:** Project → Board view
-2. **Configure columns:**
-   - Click column header → "Edit column"
-   - Set Status values for each column
-
-### Roadmap View
-
-1. **Add view:** Click "+" → "Roadmap"
-2. **Group by:** Iteration
-3. **Use for:** Release planning and timeline visibility
+| Setting | Value |
+|---------|-------|
+| **Project Number** | 4 |
+| **Project ID** | `PVT_kwHOAa4VUM4BPfU8` |
+| **Status Field ID** | `PVTSSF_lAHOAa4VUM4BPfU8zg94ixw` |
+| **Backlog Option** | `4f49f65f` |
+| **Todo Option** | `81823f8b` |
+| **In Progress Option** | `89ca0d47` |
+| **Review Option** | `ee6790a5` |
+| **Done Option** | `82137673` |
 
 ## Workflow Commands
 
-### Moving Issues via CLI
+### Picking Up an Issue
 
 ```bash
-# View project items
-gh project item-list 2 --owner hanpieter1
+# Use the pickup-issue script
+./scripts/pickup-issue.sh <issue-number>
 
-# Move issue to different status (requires GraphQL)
-gh api graphql -f query='...'
+# Or on PowerShell
+.\scripts\pickup-issue.ps1 <issue-number>
 ```
+
+This will:
+1. Assign the issue to you
+2. Set project status to "In Progress"
+3. Create a feature branch
+4. Checkout the branch
 
 ### Quick Issue Creation
 
 ```bash
 # Create new issue with labels
-gh issue create --title "[REQ-XXX] Feature Name" \
-  --label "enhancement,medium-priority" \
-  --body "## Summary\n..."
+gh issue create --title "X.Y Description" \
+  --label "Epic X: Label Name" \
+  --body "## User Story
+**As** a <role>
+**I want to** <goal>
+**So that** <benefit>
+
+## Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2"
+```
+
+### View Project Items
+
+```bash
+# List project items
+gh project item-list 4 --owner hanpieter1
+
+# List issues by label
+gh issue list --repo hanpieter1/AppFactory --label "Epic 3: Project Portfolio"
 ```

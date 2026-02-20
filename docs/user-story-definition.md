@@ -4,7 +4,7 @@
 **Last Updated**: 2026-02-02
 **Status**: Active
 
-Dit document beschrijft de standaarden en criteria voor het schrijven van user stories, epics, acceptatiecriteria en test cases in het Typhoon project, conform Agile best practices.
+Dit document beschrijft de standaarden en criteria voor het schrijven van user stories, epics, acceptatiecriteria en test cases in het AppFactory project, conform Agile best practices.
 
 ---
 

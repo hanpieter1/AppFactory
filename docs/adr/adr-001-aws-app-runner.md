@@ -6,7 +6,7 @@
 
 ## Context
 
-We need to choose a deployment platform for the Typhoon web application. The application is built with Node.js/TypeScript and requires:
+We need to choose a deployment platform for the AppFactory web application. The application is built with Node.js/TypeScript and requires:
 
 - Automatic scaling based on traffic
 - Minimal operational overhead
@@ -25,7 +25,7 @@ We need to choose a deployment platform for the Typhoon web application. The app
 
 ## Decision
 
-We will use **AWS App Runner** as the primary deployment platform for Typhoon.
+We will use **AWS App Runner** as the primary deployment platform for AppFactory.
 
 ## Rationale
 

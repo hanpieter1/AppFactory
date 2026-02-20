@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-This directory contains Architecture Decision Records (ADRs) for the Typhoon project.
+This directory contains Architecture Decision Records (ADRs) for the AppFactory project.
 
 ## What is an ADR?
 

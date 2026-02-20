@@ -1,18 +1,18 @@
 # AI-First Development Workflow
 
-**Version**: 1.0
-**Last Updated**: 2026-01-21
+**Version**: 2.0
+**Last Updated**: 2026-02-18
 
 ## Overview
 
-This document defines how AI agents (primarily Claude Code) work within the Typhoon project to maintain quality, consistency, and traceability throughout the development lifecycle.
+This document defines how AI agents (primarily Claude Code) work within the AppFactory project to maintain quality, consistency, and traceability throughout the development lifecycle.
 
 ## Core Principles
 
 ### 1. Requirements-Driven Development
-- All work must trace back to a requirement ID (REQ-XXX)
-- Requirements are locked in [requirements.md](requirements.md)
-- PRs and commits must reference requirement IDs
+- All work must trace back to a user story ID (US-XXX)
+- User stories are tracked in [GitHub Issues](https://github.com/hanpieter1/AppFactory/issues)
+- PRs and commits must reference story IDs
 
 ### 2. Small, Focused Changes
 - One feature per PR
@@ -41,7 +41,7 @@ This document defines how AI agents (primarily Claude Code) work within the Typh
 
 **Guardrails:**
 - Must read existing code before suggesting changes
-- Must update requirements.md status when working on requirements
+- Must update issue status when working on user stories
 - Must include tests with every feature
 - Must run linting and tests locally before committing
 - Must keep changes minimal and focused
@@ -61,7 +61,7 @@ This document defines how AI agents (primarily Claude Code) work within the Typh
 - Security scanning (npm audit)
 - Secret scanning
 - Docker build verification
-- Requirements traceability validation
+- User story traceability validation
 
 ### Security Agent (CI + Manual Review)
 **Responsibilities:**
@@ -226,17 +226,17 @@ describe('GET /health', () => {
 
 ### Creating a PR
 
-1. **Branch naming**: `feature/REQ-XXX-short-description` or `fix/REQ-XXX-bug-description`
+1. **Branch naming**: `feature/issue-XXX-short-description-username`
 
 2. **PR Title Format**:
    ```
-   [REQ-XXX] Brief description of change
+   [US-XXX] Brief description of change
    ```
 
 3. **PR Description Template**:
    ```markdown
-   ## Requirement
-   Closes REQ-XXX
+   ## User Story
+   Closes #XXX
 
    ## What Changed
    - List of changes
@@ -251,7 +251,7 @@ describe('GET /health', () => {
    ## Checklist
    - [ ] Code follows style guidelines
    - [ ] Documentation updated
-   - [ ] Requirements.md status updated
+   - [ ] Issue status updated
    - [ ] No new warnings or errors
    - [ ] Security considerations addressed
    ```
@@ -260,14 +260,14 @@ describe('GET /health', () => {
 
 Before submitting a PR, the AI agent must verify:
 
-- [ ] Requirement ID included in title or commits
+- [ ] User story ID included in title or commits
 - [ ] Tests added for new functionality
 - [ ] All existing tests passing
 - [ ] Code coverage meets threshold (80%)
 - [ ] No linting errors or warnings
 - [ ] TypeScript compiles without errors
 - [ ] Documentation updated
-- [ ] Requirements.md updated with status
+- [ ] Issue status updated on project board
 - [ ] No secrets or sensitive data committed
 - [ ] Docker build succeeds
 - [ ] Changes are minimal and focused
@@ -340,7 +340,7 @@ The AI agent can proceed without asking when:
 
 ### Commit Message Format
 ```
-[REQ-XXX] Short description
+feat: Short description (#XXX)
 
 Longer description if needed.
 
@@ -350,13 +350,13 @@ Longer description if needed.
 
 ### Code Comments (when needed)
 ```typescript
-// REQ-001: Health check must include database status
+// US-001: Health check must include database status
 const dbStatus = await databaseService.ping();
 ```
 
 ### Test Descriptions
 ```typescript
-// REQ-001: Health endpoint returns database status
+// US-001: Health endpoint returns database status
 it('should include database status in health check', () => {
   // ...
 });
@@ -383,7 +383,7 @@ npm run build       # Production build
   5. Run tests with coverage
   6. Security scanning
   7. Build Docker image
-  8. Requirements traceability check
+  8. User story traceability check
 
 ### CD Pipeline (GitHub Actions)
 - Triggered on: Merge to main
@@ -413,11 +413,10 @@ npm run build       # Production build
 
 ### Commands
 ```bash
-make dev      # Start development server
-make test     # Run all tests
-make lint     # Lint and format
-make build    # Production build
-make clean    # Clean artifacts
+npm run dev       # Start development server
+npm test          # Run all tests
+npm run lint      # Lint and format check
+npm run build     # Production build
 ```
 
 ### Links
@@ -425,6 +424,8 @@ make clean    # Clean artifacts
 - [Architecture Decisions](adr/)
 - [Deployment Guide](deployment.md)
 - [Monitoring](monitoring.md)
+- [User Story Definition](user-story-definition.md)
+- [Sprint Workflow](sprint-workflow.md)
 
 ---
 
