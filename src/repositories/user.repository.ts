@@ -24,6 +24,8 @@ interface UserRow {
   is_anonymous: boolean;
   is_local_user: boolean;
   user_type: string;
+  department_id: string | null;
+  team_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,7 +41,7 @@ interface RoleRow {
 // Columns selected in all non-password queries (never includes password)
 const USER_COLUMNS = `id, name, full_name, email, active, blocked, blocked_since,
   failed_logins, last_login, web_service_user, is_anonymous, is_local_user,
-  user_type, created_at, updated_at`;
+  user_type, department_id, team_id, created_at, updated_at`;
 
 // Aliased version for queries that use table alias 'u' (e.g. findAll with JOINs)
 const USER_COLUMNS_ALIASED = USER_COLUMNS.split(',')
@@ -68,6 +70,8 @@ function mapRow(row: UserRow): User {
     isAnonymous: row.is_anonymous,
     isLocalUser: row.is_local_user,
     userType: row.user_type as UserType,
+    departmentId: row.department_id,
+    teamId: row.team_id,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
@@ -351,6 +355,19 @@ export class UserRepository {
     } finally {
       client.release();
     }
+  }
+
+  async updateTeamAssignment(
+    id: string,
+    departmentId: string | null,
+    teamId: string | null
+  ): Promise<User | null> {
+    const result = await pool.query<UserRow>(
+      `UPDATE users SET department_id = $1, team_id = $2 WHERE id = $3
+       RETURNING ${USER_COLUMNS}`,
+      [departmentId, teamId, id]
+    );
+    return result.rows.length > 0 ? mapRow(result.rows[0]) : null;
   }
 
   async isRoleAssignedToAnyUser(roleId: string): Promise<boolean> {

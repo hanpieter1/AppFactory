@@ -2,6 +2,29 @@
 import request from 'supertest';
 import { createApp } from '../../src/app';
 
+jest.mock('../../src/repositories/project.repository', () => ({
+  ProjectRepository: jest.fn(),
+  projectRepository: {
+    findAll: jest.fn().mockResolvedValue([]),
+    findById: jest.fn(),
+    findByName: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    hasChildProjects: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/feedback.repository', () => ({
+  FeedbackRepository: jest.fn(),
+  feedbackRepository: {
+    create: jest.fn(),
+    findAll: jest.fn().mockResolvedValue([]),
+    findById: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+
 describe('GET /health', () => {
   const app = createApp();
 

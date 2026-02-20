@@ -88,6 +88,7 @@ describe('RouteAccessService', () => {
       getUserRoles: jest.fn(),
       setUserRoles: jest.fn(),
       isRoleAssignedToAnyUser: jest.fn(),
+      updateTeamAssignment: jest.fn(),
     } as jest.Mocked<UserRepository>;
 
     service = new RouteAccessService(mockRouteAccessRepo, mockModuleRoleRepo, mockUserRepo);

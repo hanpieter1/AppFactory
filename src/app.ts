@@ -13,6 +13,12 @@ import modulesRouter from './routes/api/modules';
 import accessRulesRouter from './routes/api/access-rules';
 import navigationRouter from './routes/api/navigation';
 import clientsRouter from './routes/api/clients';
+import departmentsRouter from './routes/api/departments';
+import teamsRouter from './routes/api/teams';
+import projectRolesRouter from './routes/api/project-roles';
+import orgChartRouter from './routes/api/org-chart';
+import projectsRouter from './routes/api/projects';
+import feedbackRouter from './routes/api/feedback';
 
 export function createApp(): Application {
   const app = express();
@@ -38,6 +44,12 @@ export function createApp(): Application {
   app.use('/api/access-rules', accessRulesRouter);
   app.use('/api/navigation', navigationRouter);
   app.use('/api/clients', clientsRouter);
+  app.use('/api/departments', departmentsRouter);
+  app.use('/api/teams', teamsRouter);
+  app.use('/api/project-roles', projectRolesRouter);
+  app.use('/api/org-chart', orgChartRouter);
+  app.use('/api/projects', projectsRouter);
+  app.use('/api/feedback', feedbackRouter);
 
   // Root endpoint - Home page
   app.get('/', (_req, res) => {

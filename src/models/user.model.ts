@@ -21,6 +21,8 @@ export interface User {
   isAnonymous: boolean;
   isLocalUser: boolean;
   userType: UserType;
+  departmentId: string | null;
+  teamId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

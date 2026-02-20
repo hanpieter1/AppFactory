@@ -26,4 +26,4 @@ CREATE INDEX idx_entity_access_rules_entity ON entity_access_rules(entity);
 CREATE TRIGGER trg_entity_access_rules_updated_at
     BEFORE UPDATE ON entity_access_rules
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+    EXECUTE FUNCTION update_updated_at_column();

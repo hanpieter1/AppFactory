@@ -65,6 +65,7 @@ jest.mock('../../src/repositories/user.repository', () => ({
     getUserRoles: (...args: unknown[]) => mockUserGetUserRoles(...args),
     setUserRoles: (...args: unknown[]) => mockUserSetUserRoles(...args),
     isRoleAssignedToAnyUser: (...args: unknown[]) => mockUserIsRoleAssignedToAnyUser(...args),
+    updateTeamAssignment: jest.fn(),
   },
 }));
 
@@ -116,6 +117,81 @@ jest.mock('../../src/repositories/token.repository', () => ({
   },
 }));
 
+jest.mock('../../src/repositories/department.repository', () => ({
+  DepartmentRepository: jest.fn(),
+  departmentRepository: {
+    findAll: jest.fn(), findById: jest.fn(), findByName: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(),
+    hasTeams: jest.fn(), hasMembers: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/team.repository', () => ({
+  TeamRepository: jest.fn(),
+  teamRepository: {
+    findAll: jest.fn(), findById: jest.fn(), findByNameInDepartment: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(),
+    hasMembers: jest.fn(), getTeamMembers: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/project-role.repository', () => ({
+  ProjectRoleRepository: jest.fn(),
+  projectRoleRepository: {
+    findAll: jest.fn(), findById: jest.fn(), findByName: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/module.repository', () => ({
+  ModuleRepository: jest.fn(),
+  moduleRepository: {
+    findAll: jest.fn(), findById: jest.fn(), findByName: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(), hasModuleRoles: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/module-role.repository', () => ({
+  ModuleRoleRepository: jest.fn(),
+  moduleRoleRepository: {
+    findById: jest.fn(), findByModuleId: jest.fn(), findByNameInModule: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(), isModuleRoleMapped: jest.fn(),
+    getModuleRolesForUserRole: jest.fn(), addModuleRoleToUserRole: jest.fn(),
+    removeModuleRoleFromUserRole: jest.fn(), isMappingExists: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/client.repository', () => ({
+  ClientRepository: jest.fn(),
+  clientRepository: {
+    findAll: jest.fn(), findById: jest.fn(), findByCode: jest.fn(),
+    create: jest.fn(), update: jest.fn(), delete: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/project.repository', () => ({
+  ProjectRepository: jest.fn(),
+  projectRepository: {
+    findAll: jest.fn().mockResolvedValue([]),
+    findById: jest.fn(),
+    findByName: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    hasChildProjects: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/repositories/feedback.repository', () => ({
+  FeedbackRepository: jest.fn(),
+  feedbackRepository: {
+    create: jest.fn(),
+    findAll: jest.fn().mockResolvedValue([]),
+    findById: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+
 describe('/api/users', () => {
   const app = createApp();
 
@@ -151,6 +227,8 @@ describe('/api/users', () => {
     isAnonymous: false,
     isLocalUser: true,
     userType: UserType.Internal,
+    departmentId: null,
+    teamId: null,
     createdAt: now,
     updatedAt: now,
   };

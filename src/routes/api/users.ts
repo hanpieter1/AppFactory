@@ -234,4 +234,25 @@ router.post(
   })
 );
 
+// PUT /api/users/:id/team — Assign user to department/team (#8, JWT-protected)
+router.put(
+  '/:id/team',
+  authMiddleware,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { departmentId, teamId } = req.body as {
+      departmentId?: string | null;
+      teamId?: string | null;
+    };
+    const user = await userRepository.updateTeamAssignment(
+      req.params.id,
+      departmentId ?? null,
+      teamId ?? null
+    );
+    if (!user) {
+      throw new ValidationError(`User with id '${req.params.id}' not found`);
+    }
+    res.status(200).json(user);
+  })
+);
+
 export default router;

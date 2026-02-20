@@ -51,6 +51,8 @@ describe('AuthService', () => {
     isAnonymous: false,
     isLocalUser: true,
     userType: UserType.Internal,
+    departmentId: null,
+    teamId: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -97,6 +99,7 @@ describe('AuthService', () => {
       getUserRoles: jest.fn(),
       setUserRoles: jest.fn(),
       isRoleAssignedToAnyUser: jest.fn(),
+      updateTeamAssignment: jest.fn(),
     } as jest.Mocked<UserRepository>;
 
     mockSessionRepo = {

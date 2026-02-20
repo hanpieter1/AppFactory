@@ -22,4 +22,4 @@ CREATE INDEX idx_route_access_rules_route ON route_access_rules(route);
 CREATE TRIGGER trg_route_access_rules_updated_at
     BEFORE UPDATE ON route_access_rules
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
+    EXECUTE FUNCTION update_updated_at_column();
